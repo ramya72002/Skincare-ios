@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Modal, FlatList } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Modal, FlatList, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -29,42 +29,41 @@ const FindDermatologist = () => {
   ];
 
   const states = [
-      "AndhraPradesh",
-      "ArunachalPradesh",
-      "Assam",
-      "Bihar",
-      "Chhattisgarh",
-      "Goa",
-      "Gujarat",
-      "Haryana",
-      "HimachalPradesh",
-      "Jharkhand",
-      "Karnataka",
-      "Kerala",
-      "MadhyaPradesh",
-      "Maharashtra",
-      "Manipur",
-      "Meghalaya",
-      "Mizoram",
-      "Nagaland",
-      "Odisha",
-      "Punjab",
-      "Rajasthan",
-      "Sikkim",
-      "TamilNadu",
-      "Telangana",
-      "Tripura",
-      "UttarPradesh",
-      "Uttarakhand",
-      "WestBengal",
-      "AndamanNicobar",
-      "Chandigarh",
-      "DadraNagarHaveliDamanDiu",
-      "Lakshadweep",
-      "Delhi",
-      "Puducherry"
-  ]
-  
+    "AndhraPradesh",
+    "ArunachalPradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "HimachalPradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "MadhyaPradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "TamilNadu",
+    "Telangana",
+    "Tripura",
+    "UttarPradesh",
+    "Uttarakhand",
+    "WestBengal",
+    "AndamanNicobar",
+    "Chandigarh",
+    "DadraNagarHaveliDamanDiu",
+    "Lakshadweep",
+    "Delhi",
+    "Puducherry"
+  ];
 
   useEffect(() => {
     if (selectedState) {
@@ -138,6 +137,38 @@ const FindDermatologist = () => {
     }
   };
 
+  const handlePhonePress = (phone) => {
+    if (!phone) {
+      Alert.alert("Error", "No phone number available.");
+      return;
+    }
+  
+    const formattedPhone = phone.replace(/[^+\d]/g, ''); // Removes everything except digits and +
+  
+    const phoneRegex = /^\+?\d{10,15}$/; // Allows + and 10-15 digits
+  
+    if (!phoneRegex.test(formattedPhone)) {
+      Alert.alert("Invalid Phone Number", `Please provide a valid phone number: ${formattedPhone}`);
+      return;
+    }
+  
+    Alert.alert(
+      "Call Dermatologist",
+      `Do you want to call ${formattedPhone}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Call", onPress: () => {
+            Linking.openURL(`tel:${formattedPhone}`)
+              .catch(err => {
+                console.error("Failed to open URL:", err);
+                Alert.alert("Error", "Unable to place the call. Please try again.");
+              });
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       {showBanner && (
@@ -173,24 +204,23 @@ const FindDermatologist = () => {
         <Text style={styles.buttonText}>Find Nearby Dermatologist</Text>
       </TouchableOpacity>
 
-      <ScrollView style={styles.scrollContainer}>
-  {loading ? (
-    <ActivityIndicator size="large" color="#94499c" style={styles.loader} />
-  ) : (
-    FindDermatologistData.filter(item => item.phone).map((item, index) => (
-      <View key={index} style={styles.itemContainer}>
-        <Text style={[styles.itemText, styles.doctorName]}>Name: {item.name}</Text>
-        <Text style={styles.itemText}>Address: {item.address}</Text>
-        <Text style={styles.itemText}>City: {item.city}</Text>
-        <TouchableOpacity onPress={() => Linking.openURL(`tel:${item.phone}`)}>
-          <Text style={[styles.itemText, styles.phoneLink]}>Phone: {item.phone}</Text>
-        </TouchableOpacity>
-      </View>
-    ))
-  )}
-  {error && <Text style={styles.errorText}>{error}</Text>}
-</ScrollView>
-
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#94499c" style={styles.loader} />
+        ) : (
+          FindDermatologistData.filter(item => item.phone).map((item, index) => (
+            <View key={index} style={styles.itemContainer}>
+              <Text style={[styles.itemText, styles.doctorName]}>Name: {item.name}</Text>
+              <Text style={styles.itemText}>Address: {item.address}</Text>
+              <Text style={styles.itemText}>City: {item.city}</Text>
+              <TouchableOpacity onPress={() => handlePhonePress(item.phone)}>
+                <Text style={[styles.itemText, styles.phoneLink]}>Phone: {item.phone}</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
+      </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('Categories')}>
@@ -207,137 +237,106 @@ const FindDermatologist = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Modal for City Selection */}
-      <Modal
-        transparent={true}
-        visible={cityModalVisible}
-        animationType="slide"
-        onRequestClose={() => setCityModalVisible(false)}
-      >
+      {/* Modals for State and City Selection */}
+      <Modal visible={stateModalVisible} transparent={true}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Select a City</Text>
-          <FlatList
-            data={cities}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.modalItem}
-                onPress={() => {
-                  setCity(item);
-                  setCityModalVisible(false);
-                }}
-              >
-                <Text style={styles.modalItemText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setCityModalVisible(false)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select State</Text>
+            <FlatList
+              data={states}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => {
+                  setSelectedState(item);
+                  setStateModalVisible(false);
+                }}>
+                  <Text style={styles.modalItem}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <Button title="Close" onPress={() => setStateModalVisible(false)} />
+          </View>
         </View>
       </Modal>
 
-      {/* Modal for State Selection */}
-      <Modal
-        transparent={true}
-        visible={stateModalVisible}
-        animationType="slide"
-        onRequestClose={() => setStateModalVisible(false)}
-      >
+      <Modal visible={cityModalVisible} transparent={true}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Select a State</Text>
-          <FlatList
-            data={states}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.modalItem}
-                onPress={() => {
-                  setSelectedState(item);
-                  setStateModalVisible(false);
-                }}
-              >
-                <Text style={styles.modalItemText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setStateModalVisible(false)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select City</Text>
+            <FlatList
+              data={cities}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => {
+                  setCity(item);
+                  setCityModalVisible(false);
+                }}>
+                  <Text style={styles.modalItem}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <Button title="Close" onPress={() => setCityModalVisible(false)} />
+          </View>
         </View>
       </Modal>
     </View>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 5,
-    alignItems: 'center',
+    padding: 16,
     backgroundColor: '#f9f9f9',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   banner: {
     width: '100%',
-    height: height * 0.3,
+    height: height * 0.3, // Adjust height based on screen size
     borderRadius: 10,
-    marginBottom: 20,
   },
   mainHeading: {
-    fontSize: 22,
+    fontSize: 22 * scaleWidth,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginTop: 40,
+    // marginVertical: 10,
   },
   subHeading: {
-    fontSize: 16,
+    fontSize: 16 * scaleWidth,
     textAlign: 'center',
-    color: '#666',
     marginBottom: 20,
   },
   input: {
-    width: '90%',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
     borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
-    marginBottom: 10,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: '#fff',
   },
   inputText: {
-    fontSize: 16,
+    fontSize: 16 * scaleWidth,
   },
   button: {
-    width: '90%',
-    padding: 15,
     backgroundColor: '#94499c',
+    padding: 12,
     borderRadius: 5,
     alignItems: 'center',
     marginBottom: 20,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  scrollContainer: {
-    width: '100%',
-    padding: 10,
+    color: '#fff',
+    fontSize: 16 * scaleWidth,
   },
   itemContainer: {
-    backgroundColor: '#e6e6e6', // Lighter background color for item containers
-    padding: 15 * scaleWidth,
-    marginBottom: 10 * scaleHeight,
-    marginLeft: 10 * scaleWidth,
-    marginRight: 10 * scaleWidth,
-    borderRadius: 10 * scaleWidth,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
   },
   itemText: {
     fontSize: 15 * scaleWidth,
@@ -372,38 +371,27 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
+    marginTop:50,
+    marginBottom:50,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
     padding: 20,
+    borderRadius: 10,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: 'white',
   },
   modalItem: {
-    backgroundColor: 'white',
     padding: 10,
-    marginVertical: 5,
-    borderRadius: 5,
-  },
-  modalItemText: {
-    fontSize: 16,
-  },
-  closeButton: {
-    backgroundColor: '#94499c',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  closeButtonText: {
-    color: 'white',
     fontSize: 16,
   },
   loader: {
-    marginTop: 20,
+    marginVertical: 20,
   },
 });
 
