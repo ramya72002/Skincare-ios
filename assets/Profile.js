@@ -1,13 +1,47 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Dimensions, Modal, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../Header';
+import Header from './Header';
+import { scale, verticalScale } from '../utils/scaling';
+
+const { width, height } = Dimensions.get('window');
+const scaleWidth = width / 375;
+const scaleHeight = height / 667;
 
 const Profile = ({ navigation }) => {
   const [profileData, setProfileData] = useState(null);
-  const [preferredLanguage, setPreferredLanguage] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState('en');
   const [isLoading, setIsLoading] = useState(true);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  const languages = [
+    { label: "Assamese", value: "as" },
+    { label: "Awadhi", value: "awa" },
+    { label: "Bengali", value: "bn" },
+    { label: "Bhojpuri", value: "bho" },
+    { label: "Chhattisgarhi", value: "chg" },
+    { label: "Dogri", value: "doi" },
+    { label: "English", value: "en" },
+    { label: "Gujarati", value: "gu" },
+    { label: "Haryanvi", value: "hne" },
+    { label: "Hindi", value: "hi" },
+    { label: "Kannada", value: "kn" },
+    { label: "Kashmiri", value: "ks" },
+    { label: "Konkani", value: "kok" },
+    { label: "Maithili", value: "mai" },
+    { label: "Malayalam", value: "ml" },
+    { label: "Manipuri", value: "mni" },
+    { label: "Marathi", value: "mr" },
+    { label: "Nepali", value: "ne" },
+    { label: "Odia", value: "or" },
+    { label: "Punjabi", value: "pa" },
+    { label: "Sanskrit", value: "sa" },
+    { label: "Santali", value: "sat" },
+    { label: "Sindhi", value: "sd" },
+    { label: "Tamil", value: "ta" },
+    { label: "Telugu", value: "te" },
+    { label: "Urdu", value: "ur" },
+  ];
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -16,8 +50,9 @@ const Profile = ({ navigation }) => {
         if (loginDataString) {
           const loginData = JSON.parse(loginDataString);
           setProfileData(loginData);
-          // Set preferredLanguage to loginData.preferredLanguage if it exists, otherwise default to 'en'
           setPreferredLanguage(loginData.preferredLanguage || 'en');
+        } else {
+          navigation.navigate('Login');
         }
       } catch (error) {
         console.error('Failed to load profile data', error);
@@ -27,20 +62,20 @@ const Profile = ({ navigation }) => {
     };
 
     fetchProfileData();
-  }, []);
+  }, [navigation]);
 
   const handleLanguageChange = async (itemValue) => {
     setPreferredLanguage(itemValue);
     const updatedProfileData = { ...profileData, preferredLanguage: itemValue };
     setProfileData(updatedProfileData);
     await AsyncStorage.setItem('loginData', JSON.stringify(updatedProfileData));
-    console.log("uuuuuuuuuuuuuu",updatedProfileData)
     navigation.navigate('Categories', { preferredLanguage: itemValue });
+    setLanguageModalVisible(false);
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('loginData'); // Remove stored login data
-    navigation.navigate('Login'); // Navigate to Login screen
+    await AsyncStorage.clear();
+    navigation.navigate('Login');
   };
 
   if (isLoading) {
@@ -52,8 +87,12 @@ const Profile = ({ navigation }) => {
     );
   }
 
+  if (!profileData) {
+    return null;
+  }
+
   return (
-    <ScrollView  >
+    <ScrollView contentContainerStyle={styles.container}>
       <Header />
       <Text style={styles.headerText}>Profile</Text>
       <View style={styles.profileContainer}>
@@ -66,126 +105,181 @@ const Profile = ({ navigation }) => {
           <Text style={styles.value}>{profileData?.email}</Text>
         </View>
         <View style={styles.profileItem}>
-          <Text style={styles.label}>Contact Number:</Text>
+          <Text style={styles.label}>Phone:</Text>
           <Text style={styles.value}>{profileData?.contactNumber}</Text>
         </View>
         <View style={styles.profileItem}>
-          <Text style={styles.label}>Preferred Language:</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={preferredLanguage}
-              onValueChange={handleLanguageChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Assamese" value="as" />
-              <Picker.Item label="Awadhi" value="awa" />
-              <Picker.Item label="Bengali" value="bn" />
-              <Picker.Item label="Bhojpuri" value="bho" />
-              <Picker.Item label="Chhattisgarhi" value="chg" />
-              <Picker.Item label="Dogri" value="doi" />
-              <Picker.Item label="English" value="en" />
-              <Picker.Item label="Gujarati" value="gu" />
-              <Picker.Item label="Haryanvi" value="hne" />
-              <Picker.Item label="Hindi" value="hi" />
-              <Picker.Item label="Kannada" value="kn" />
-              <Picker.Item label="Kashmiri" value="ks" />
-              <Picker.Item label="Konkani" value="kok" />
-              <Picker.Item label="Maithili" value="mai" />
-              <Picker.Item label="Malayalam" value="ml" />
-              <Picker.Item label="Manipuri" value="mni" />
-              <Picker.Item label="Marathi" value="mr" />
-              <Picker.Item label="Nepali" value="ne" />
-              <Picker.Item label="Odia" value="or" />
-              <Picker.Item label="Punjabi" value="pa" />
-              <Picker.Item label="Sanskrit" value="sa" />
-              <Picker.Item label="Santali" value="sat" />
-              <Picker.Item label="Sindhi" value="sd" />
-              <Picker.Item label="Tamil" value="ta" />
-              <Picker.Item label="Telugu" value="te" />
-              <Picker.Item label="Urdu" value="ur" />
-            </Picker>
-          </View>
+          <Text style={styles.label}>Language:</Text>
+          <TouchableOpacity style={styles.languageButton} onPress={() => setLanguageModalVisible(true)}>
+            <Text style={styles.languageButtonText}>{languages.find(lang => lang.value === preferredLanguage)?.label || "Select Language"}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
+      <Text style={styles.footerText}>Designed and Developed by NVision IT</Text>
+
+      {/* Language Selection Modal */}
+      <Modal
+        transparent={true}
+        visible={languageModalVisible}
+        animationType="slide"
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Select a Language</Text>
+          <FlatList
+            data={languages}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.modalItem}
+                onPress={() => handleLanguageChange(item.value)}
+              >
+                <Text style={styles.modalItemText}>{item.label}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setLanguageModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  // Existing styles...
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: verticalScale(10),
+    fontSize: scale(16),
     color: '#333',
   },
   container: {
     flexGrow: 1,
     backgroundColor: '#f9f9f9',
-    padding: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
   },
   headerText: {
-    fontSize: 35,
+    fontSize: scale(28),
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: verticalScale(15),
     color: '#94499c',
     textAlign: 'center',
   },
   profileContainer: {
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
+    padding: scale(15),
+    borderRadius: scale(10),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowRadius: scale(5),
+    marginBottom: verticalScale(20),
   },
   profileItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    alignItems: 'center',
+    marginBottom: verticalScale(10),
   },
   label: {
-    fontSize: 18,
+    fontSize: scale(16),
     color: '#333',
     fontWeight: 'bold',
+    flex: 1,
   },
   value: {
-    fontSize: 18,
-    color: '#555',
+    fontSize: scale(16),
+    color: '#666',
+    flex: 2,
   },
   pickerContainer: {
+    flex: 2,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
-    marginTop: 5,
-    marginBottom: 15,
-    width: '50%', // Ensure the picker container takes full width
+    borderRadius: scale(5),
+    marginLeft: scale(10),
   },
   picker: {
-    height: 50,
+    height: verticalScale(40),
     width: '100%',
   },
   logoutButton: {
     backgroundColor: '#ff6961',
-    padding: 15,
-    borderRadius: 5,
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(20),
+    borderRadius: scale(5),
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: verticalScale(20),
   },
   logoutButtonText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: scale(18),
     fontWeight: 'bold',
+  },
+  footerText: {
+    textAlign: 'center',
+    fontSize: scale(14),
+    marginBottom: verticalScale(0),
+    color: '#94499c',
+  },
+
+  languageButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: scale(5),
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(40),
+  },
+  languageButtonText: {
+    fontSize: scale(16),
+    color: '#333',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: 'white',
+  },
+  modalItem: {
+    backgroundColor: 'white',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 5,
+  },
+  modalItemText: {
+    fontSize: 16,
+  },
+  closeButton: {
+    backgroundColor: '#94499c',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 

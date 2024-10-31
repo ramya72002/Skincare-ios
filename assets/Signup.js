@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Dimensions, StyleSheet, Image, TextInput } from 'react-native';
 import Background from './Background';
 import Btn from './Btn';
 import { darkGreen } from './Constants';
-import Field from './Field';
-import HomepageText from './HomepageText';
+import { scale, verticalScale } from '../utils/scaling';
 
 const { width, height } = Dimensions.get('window');
+
+const scaleFont = (size) => size * (width / 375);
 
 const Signup = (props) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (email) => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,7 +26,7 @@ const Signup = (props) => {
 
   const handleSignup = async () => {
     if (!name || !email || !contactNumber) {
-      Alert.alert('Error', 'All fields are required');
+      Alert.alert('Missing Information', 'Please ensure all fields are completed before proceeding.');
       return;
     }
 
@@ -44,6 +46,8 @@ const Signup = (props) => {
       contactNumber,
     };
 
+    setLoading(true); // Show loading GIF
+
     try {
       const response = await fetch('https://backen-skin-care-app.vercel.app/signup', {
         method: 'POST',
@@ -58,14 +62,17 @@ const Signup = (props) => {
 
       if (!response.ok) {
         Alert.alert('Error', responseText);
+        setLoading(false); // Hide loading GIF
         return;
       }
-
-      Alert.alert('Account created');
-      props.navigation.navigate('HomepageText');
-    } catch (error) {
-      console.error('Error:', error);
+      props.navigation.navigate('Login', {
+        email: email,
+        contactNumber: contactNumber,
+      });
+          } catch (error) {
       Alert.alert('Error', 'Failed to create account');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,26 +80,46 @@ const Signup = (props) => {
     <Background>
       <View style={styles.container}>
         <Text style={styles.registerText}>Register</Text>
-        <Text style={styles.createAccountText}>Create a new account</Text>
+        <Text style={styles.createAccountText}>Start your skincare revolution today</Text>
         <View style={styles.formContainer}>
-          <Field placeholder="Name" value={name} onChangeText={setName} />
-          <Field placeholder="Email" keyboardType={'email-address'} value={email} onChangeText={setEmail} />
-          <Field placeholder="Contact Number" keyboardType={'numeric'} value={contactNumber} onChangeText={setContactNumber} />
-          {/* <View style={styles.termsContainer}>
-            <Text style={styles.termsText}>By signing in, you agree to our </Text>
-            <Text style={styles.termsLinkText}>Terms & Conditions</Text>
-          </View> */}
-          {/* <View style={styles.privacyContainer}>
-            <Text style={styles.privacyText}>and </Text>
-            <Text style={styles.privacyLinkText}>Privacy Policy</Text>
-          </View> */}
-          <Btn textColor="white" bgColor={darkGreen} btnLabel="Signup" Press={handleSignup} />
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => props.navigation.navigate('Login')}>
-              <Text style={styles.loginLinkText}>Login</Text>
-            </TouchableOpacity>
-          </View>
+          {loading ? (
+            <Image source={require('./1495.gif')} style={styles.loadingImage} />
+          ) : (
+            <>
+              <TextInput
+                placeholder="Name"
+                value={name}
+                onChangeText={setName}
+                style={styles.inputField}
+                placeholderTextColor={darkGreen}
+              />
+              <TextInput
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                style={styles.inputField}
+                placeholderTextColor={darkGreen}
+              />
+              <TextInput
+                placeholder="Contact Number"
+                keyboardType="numeric"
+                value={contactNumber}
+                onChangeText={setContactNumber}
+                style={styles.inputField}
+                placeholderTextColor={darkGreen}
+              />
+              <Btn textColor="white" bgColor={darkGreen} btnLabel="Signup" Press={handleSignup} />
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => props.navigation.navigate('Login')}>
+                  <Text style={styles.loginLinkText}>Login</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+          {/* Footer Text */}
+          <Text style={styles.footerText}>Designed and Developed by NVision IT</Text>
         </View>
       </View>
     </Background>
@@ -102,70 +129,56 @@ const Signup = (props) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    width: width * 0.9, // 90% of screen width
+    width: '90%',
   },
   registerText: {
-    color: 'white',
-    fontSize: 0.12 * width, // dynamic font size
+    color: '#fff',
+    fontSize: scaleFont(36),
     fontWeight: 'bold',
-    marginTop: 50,
+    marginTop: verticalScale(30),
   },
   createAccountText: {
-    color: 'white',
-    fontSize: 0.05 * width, // dynamic font size
-    fontWeight: 'bold',
-    marginBottom: 40,
+    color: '#ccc',
+    fontSize: scaleFont(16),
+    marginBottom: verticalScale(20),
   },
   formContainer: {
     backgroundColor: 'white',
-    height: height * 0.8, // 80% of screen height
-    width: width * 1, // 90% of screen width
-    borderTopLeftRadius: 200,
-    paddingTop: 100,
+    height: verticalScale(600), // Scaled height
+    width: scale(440), 
+    borderTopLeftRadius: scale(250), 
+    paddingTop: verticalScale(70), 
     alignItems: 'center',
+    paddingLeft: scale(5), 
   },
-  termsContainer: {
-    flexDirection: 'row',
-    width: '78%',
-    paddingRight: 16,
-  },
-  termsText: {
-    color: 'grey',
-    fontSize: 16,
-  },
-  termsLinkText: {
-    color: darkGreen,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  privacyContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '78%',
-    paddingRight: 16,
-    marginBottom: 10,
-  },
-  privacyText: {
-    color: 'grey',
-    fontSize: 16,
-  },
-  privacyLinkText: {
-    color: darkGreen,
-    fontWeight: 'bold',
-    fontSize: 16,
+  inputField: {
+    borderRadius: scale(20),
+    backgroundColor: '#e9e9e9',
+    width: '70%',
+    padding: scale(15),
+    marginVertical: verticalScale(10),
+    fontSize: scaleFont(16),
+    color: '#333',
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    marginTop: verticalScale(15),
   },
   loginText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: scaleFont(14),
+    // color: '#777',
   },
   loginLinkText: {
     color: darkGreen,
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: scaleFont(14),
+  },
+  footerText: {
+    fontSize: scaleFont(12),
+    color: '#aaa',
+    textAlign: 'center',
+    marginTop: verticalScale(1),
   },
 });
 

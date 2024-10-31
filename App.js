@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Login from './assets/Login';
+import About from './assets/About';
 import Signup from './assets/Signup';
 import Categories from './assets/Categories';
 import Weather from './assets/Weather';
@@ -27,7 +28,7 @@ import Hair from './assets/SefDermatology/Hair';
 import Envdisorder from './assets/SefDermatology/Envdisorder';
 import Additional from './assets/SefDermatology/Additional';
 import Pigmentary from './assets/SefDermatology/Pigmentary';
-import UserForum from './assets/UserForum';
+// import UserForum from './assets/UserForum';
 import Profile from './assets/Profile';
 import ProfileHeader from './assets/ProfileHeader.';
 
@@ -47,7 +48,7 @@ const App = () => {
 
       if (loginDataString === "null" || !loginDataString) {
         console.log('Login data is null or not found:', loginDataString);
-        setCurrentRoute('Login');
+        setCurrentRoute('About');
       } else {
         const loginData = JSON.parse(loginDataString);
 
@@ -90,6 +91,8 @@ const App = () => {
           }}
           initialRouteName={currentRoute}
         >
+          <Stack.Screen name="About" component={About} />
+
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Signup" component={Signup} />
           <Stack.Screen name="HomepageText" component={HomepageText} />
@@ -100,7 +103,7 @@ const App = () => {
 
           <Stack.Screen name="Weather" component={Weather} />
           <Stack.Screen name="FindDermatologist" component={FindDermatologist} />
-          <Stack.Screen name="UserForum" component={UserForum} />
+          {/* <Stack.Screen name="UserForum" component={UserForum} /> */}
           <Stack.Screen name="SkinCancerTypes" component={SkinCancerTypes} />
           <Stack.Screen name="BCComponent" component={BCComponent} />
           <Stack.Screen name="BccTabel" component={BccTabel} />
@@ -119,7 +122,7 @@ const App = () => {
           <Stack.Screen name="Envdisorder" component={Envdisorder} />
           <Stack.Screen name="Additional" component={Additional} />
         </Stack.Navigator>
-        {(['Categories','Profile','UserForum', 'Weather','SefDermatology','SkinCancerPrevention', 'BCComponent', 'SCComponent', 'MelanomaComponent', 'SkinCancerTypes'].includes(currentRoute)) && <CustomFooter />}
+        {(['Categories','Profile', 'Weather','SefDermatology','SkinCancerPrevention', 'BCComponent', 'SCComponent', 'MelanomaComponent', 'SkinCancerTypes'].includes(currentRoute)) && <CustomFooter />}
       </View>
     </NavigationContainer>
   );

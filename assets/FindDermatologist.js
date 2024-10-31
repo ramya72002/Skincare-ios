@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, Button, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Modal, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../Header';
-import { Ionicons } from '@expo/vector-icons'; // Assuming you use Expo for icons
+import { Ionicons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
+
+const scaleWidth = width / 375;
+const scaleHeight = height / 667;
 
 const FindDermatologist = () => {
   const navigation = useNavigation();
@@ -14,7 +17,9 @@ const FindDermatologist = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [showBanner, setShowBanner] = useState(true); // State to control banner visibility
+  const [showBanner, setShowBanner] = useState(true);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [stateModalVisible, setStateModalVisible] = useState(false);
 
   const bannerImages = [
     require('./dermaBanner/derma.png'),
@@ -23,6 +28,44 @@ const FindDermatologist = () => {
     require('./dermaBanner/derma3.png'),
   ];
 
+  const states = [
+      "AndhraPradesh",
+      "ArunachalPradesh",
+      "Assam",
+      "Bihar",
+      "Chhattisgarh",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "HimachalPradesh",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "MadhyaPradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "TamilNadu",
+      "Telangana",
+      "Tripura",
+      "UttarPradesh",
+      "Uttarakhand",
+      "WestBengal",
+      "AndamanNicobar",
+      "Chandigarh",
+      "DadraNagarHaveliDamanDiu",
+      "Lakshadweep",
+      "Delhi",
+      "Puducherry"
+  ]
+  
+
   useEffect(() => {
     if (selectedState) {
       fetchCities();
@@ -30,17 +73,17 @@ const FindDermatologist = () => {
   }, [selectedState]);
 
   useEffect(() => {
-    startBannerSlideshow();
+    const bannerInterval = startBannerSlideshow();
     return () => {
-      clearInterval(this.bannerInterval);
+      clearInterval(bannerInterval);
     };
   }, []);
 
   const startBannerSlideshow = () => {
-    const bannerInterval = setInterval(() => {
+    const interval = setInterval(() => {
       setCurrentBannerIndex(prevIndex => (prevIndex + 1) % bannerImages.length);
-    }, 3000);
-    return bannerInterval;
+    }, 4000);
+    return interval;
   };
 
   const fetchCities = async () => {
@@ -48,25 +91,26 @@ const FindDermatologist = () => {
     try {
       const response = await fetch('https://backen-skin-care-app.vercel.app/cities', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: requestBody,
       });
-
       if (response.ok) {
         const data = await response.json();
         setCities(data.cities);
+        setError(null); // Reset error on successful fetch
       } else {
+        setError('Failed to fetch cities. Please try again.');
         console.error('Failed to fetch cities');
       }
     } catch (error) {
+      setError('Error fetching cities: ' + error.message);
       console.error('Error fetching cities:', error);
     }
   };
 
   const fetchData = async () => {
-    setLoading(true);
+    setLoading(true); // Ensure loading starts at the beginning
+    setError(null); // Reset error on new fetch attempt
     const requestBody = JSON.stringify({ state: selectedState, city });
 
     try {
@@ -81,21 +125,21 @@ const FindDermatologist = () => {
         const FindDermatologistData = responseData.true;
         setFindDermatologistData(FindDermatologistData);
         setLoading(false);
-        setShowBanner(false); // Hide banner on data fetch
+        setShowBanner(false);
       } else {
+        setError('Failed to fetch dermatologist data. Please try again.');
         console.error('Failed to fetch data');
       }
     } catch (error) {
+      setError('Error fetching data: ' + error.message);
       console.error('Error fetching data:', error);
-      setLoading(false);
-      setError(error.message);
+    } finally {
+      setLoading(false); // Ensure loading is stopped in case of error
     }
   };
 
   return (
     <View style={styles.container}>
-      <Header />
-      
       {showBanner && (
         <Image
           style={styles.banner}
@@ -103,152 +147,206 @@ const FindDermatologist = () => {
           resizeMode="cover"
         />
       )}
-      
-      <Text style={styles.mainHeading}>Find Dermatologist In Single Click</Text>
-      
-      <Picker
-        selectedValue={selectedState}
-        onValueChange={(itemValue) => setSelectedState(itemValue)}
-        style={styles.input}
-      >
-        <Picker.Item label="Select State" value="" />
-        <Picker.Item label="Andhra Pradesh" value="AndhraPradesh" />
-        <Picker.Item label="Arunachal Pradesh" value="ArunachalPradesh" />
-        <Picker.Item label="Assam" value="Assam" />
-        <Picker.Item label="Bihar" value="Bihar" />
-        <Picker.Item label="Chhattisgarh" value="Chhattisgarh" />
-        <Picker.Item label="Goa" value="Goa" />
-        <Picker.Item label="Gujarat" value="Gujarat" />
-        <Picker.Item label="Haryana" value="Haryana" />
-        <Picker.Item label="Himachal Pradesh" value="HimachalPradesh" />
-        <Picker.Item label="Jharkhand" value="Jharkhand" />
-        <Picker.Item label="Karnataka" value="Karnataka" />
-        <Picker.Item label="Kerala" value="Kerala" />
-        <Picker.Item label="Madhya Pradesh" value="MadhyaPradesh" />
-        <Picker.Item label="Maharashtra" value="Maharashtra" />
-        <Picker.Item label="Manipur" value="Manipur" />
-        <Picker.Item label="Meghalaya" value="Meghalaya" />
-        <Picker.Item label="Mizoram" value="Mizoram" />
-        <Picker.Item label="Nagaland" value="Nagaland" />
-        <Picker.Item label="Odisha" value="Odisha" />
-        <Picker.Item label="Punjab" value="Punjab" />
-        <Picker.Item label="Rajasthan" value="Rajasthan" />
-        <Picker.Item label="Sikkim" value="Sikkim" />
-        <Picker.Item label="Tamil Nadu" value="Tamil Nadu" />
-        <Picker.Item label="Telangana" value="Telangana" />
-        <Picker.Item label="Tripura" value="Tripura" />
-        <Picker.Item label="Uttar Pradesh" value="UttarPradesh" />
-        <Picker.Item label="Uttarakhand" value="Uttarakhand" />
-        <Picker.Item label="West Bengal" value="WestBengal" />
-      </Picker>
-      
-      <Picker
-        selectedValue={city}
-        onValueChange={(itemValue) => setCity(itemValue)}
-        style={styles.input}
-        enabled={cities.length > 0}
-      >
-        <Picker.Item label="Select City" value="" />
-        {cities.map((cityName, index) => (
-          <Picker.Item key={index} label={cityName} value={cityName} />
-        ))}
-      </Picker>
-      
-      <Button
-        title="Find Nearby Dermatologist"
+
+      <Text style={styles.mainHeading}>Find Your Dermatologist in One Click</Text>
+      <Text style={styles.subHeading}>Choose your state and city to locate nearby specialists.</Text>
+
+      {/* State Selection Button */}
+      <TouchableOpacity style={styles.input} onPress={() => setStateModalVisible(true)}>
+        <Text style={styles.inputText}>
+          {selectedState ? selectedState : "Select State"}
+        </Text>
+      </TouchableOpacity>
+
+      {/* City Selection Button */}
+      <TouchableOpacity style={styles.input} onPress={() => setCityModalVisible(true)}>
+        <Text style={styles.inputText}>
+          {city ? city : "Select City"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
         onPress={fetchData}
         disabled={!selectedState || !city || loading}
-      />
-      
-      <ScrollView style={styles.scrollContainer}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#94499c" style={styles.loader} />
-        ) : (
-          FindDermatologistData.map((item, index) => (
-            <View key={index} style={styles.itemContainer}>
-              <Text style={styles.itemText}>Name: {item.name}</Text>
-              <Text style={styles.itemText}>Address: {item.address}</Text>
-              <Text style={styles.itemText}>City: {item.city}</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(`tel:${item.phone}`)}>
-                <Text style={[styles.itemText, styles.phoneLink]}>Phone: {item.phone}</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        )}
-        {error && <Text style={styles.errorText}>{error}</Text>}
-      </ScrollView>
+      >
+        <Text style={styles.buttonText}>Find Nearby Dermatologist</Text>
+      </TouchableOpacity>
 
-      {/* Footer navigation */}
+      <ScrollView style={styles.scrollContainer}>
+  {loading ? (
+    <ActivityIndicator size="large" color="#94499c" style={styles.loader} />
+  ) : (
+    FindDermatologistData.filter(item => item.phone).map((item, index) => (
+      <View key={index} style={styles.itemContainer}>
+        <Text style={[styles.itemText, styles.doctorName]}>Name: {item.name}</Text>
+        <Text style={styles.itemText}>Address: {item.address}</Text>
+        <Text style={styles.itemText}>City: {item.city}</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(`tel:${item.phone}`)}>
+          <Text style={[styles.itemText, styles.phoneLink]}>Phone: {item.phone}</Text>
+        </TouchableOpacity>
+      </View>
+    ))
+  )}
+  {error && <Text style={styles.errorText}>{error}</Text>}
+</ScrollView>
+
+
       <View style={styles.footer}>
         <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('Categories')}>
           <Ionicons name="home" size={24} color="white" />
           <Text style={styles.tabText}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('UserForum')}>
-          <Ionicons name="people-outline" size={24} color="white" />
-          <Text style={styles.tabText}>User Forum</Text>
+        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('Weather')}>
+          <Ionicons name="cloud" size={24} color="white" />
+          <Text style={styles.tabText}>Weather</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('Profile')}>
-        <Ionicons name="person" size={24} color="white" />
-        <Text style={styles.tabText}>Profile</Text>
-      </TouchableOpacity>
+          <Ionicons name="person" size={24} color="white" />
+          <Text style={styles.tabText}>Profile</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Modal for City Selection */}
+      <Modal
+        transparent={true}
+        visible={cityModalVisible}
+        animationType="slide"
+        onRequestClose={() => setCityModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Select a City</Text>
+          <FlatList
+            data={cities}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.modalItem}
+                onPress={() => {
+                  setCity(item);
+                  setCityModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setCityModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Modal for State Selection */}
+      <Modal
+        transparent={true}
+        visible={stateModalVisible}
+        animationType="slide"
+        onRequestClose={() => setStateModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Select a State</Text>
+          <FlatList
+            data={states}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.modalItem}
+                onPress={() => {
+                  setSelectedState(item);
+                  setStateModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setStateModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    paddingTop: 5,
     alignItems: 'center',
-    paddingTop: 20,
+    backgroundColor: '#f9f9f9',
   },
   banner: {
     width: '100%',
-    height: '30%',
+    height: height * 0.3,
     borderRadius: 10,
     marginBottom: 20,
   },
   mainHeading: {
-    fontSize: 25,
+    fontSize: 22,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 10,
-    color: '#94499c',
+  },
+  subHeading: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
   },
   input: {
-    width: '80%',
-    marginBottom: 10,
-    borderColor: '#ccc',
+    width: '90%',
+    padding: 15,
+    backgroundColor: '#fff',
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 15,
-    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
-  loader: {
-    marginTop: 20,
+  inputText: {
+    fontSize: 16,
+  },
+  button: {
+    width: '90%',
+    padding: 15,
+    backgroundColor: '#94499c',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   scrollContainer: {
     width: '100%',
-    marginTop: 50,
+    padding: 10,
   },
   itemContainer: {
-    backgroundColor: '#94499c',
-    color:"white",
-    padding: 15,
-    marginBottom: 10,
-    marginLeft:10,
-    marginRight:10,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 10, height: 2 },
+    backgroundColor: '#e6e6e6', // Lighter background color for item containers
+    padding: 15 * scaleWidth,
+    marginBottom: 10 * scaleHeight,
+    marginLeft: 10 * scaleWidth,
+    marginRight: 10 * scaleWidth,
+    borderRadius: 10 * scaleWidth,
   },
   itemText: {
-    fontSize: 15,
-    marginBottom: 5,
-    color:"white",
+    fontSize: 15 * scaleWidth,
+    color: '#333', // Darker text color for contrast
+  },
+  doctorName: {
+    fontSize: 16 * scaleWidth,
+    fontWeight: 'bold', // Bold for doctor's name
+    color: '#94499c', // Color for doctor's name
   },
   phoneLink: {
     color: 'blue',
@@ -256,28 +354,56 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
-    marginTop: 10,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '100%',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
     backgroundColor: '#94499c',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
+    padding: 10,
+    width: '100%',
   },
   tab: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
   },
   tabText: {
     color: 'white',
-    marginTop: 5,
+    fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: 'white',
+  },
+  modalItem: {
+    backgroundColor: 'white',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 5,
+  },
+  modalItemText: {
+    fontSize: 16,
+  },
+  closeButton: {
+    backgroundColor: '#94499c',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  loader: {
+    marginTop: 20,
   },
 });
 

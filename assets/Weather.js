@@ -1,7 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import Header from '../Header';
+import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { scale, verticalScale } from '../utils/scaling';
+import Header from './Header';
+
+const states = [
+  { label: "AndhraPradesh", value: "AndhraPradesh" },
+  { label: "ArunachalPradesh", value: "ArunachalPradesh" },
+  { label: "Assam", value: "Assam" },
+  { label: "Bihar", value: "Bihar" },
+  { label: "Chhattisgarh", value: "Chhattisgarh" },
+  { label: "Goa", value: "Goa" },
+  { label: "Gujarat", value: "Gujarat" },
+  { label: "Haryana", value: "Haryana" },
+  { label: "HimachalPradesh", value: "HimachalPradesh" },
+  { label: "Jharkhand", value: "Jharkhand" },
+  { label: "Karnataka", value: "Karnataka" },
+  { label: "Kerala", value: "Kerala" },
+  { label: "MadhyaPradesh", value: "MadhyaPradesh" },
+  { label: "Maharashtra", value: "Maharashtra" },
+  { label: "Manipur", value: "Manipur" },
+  { label: "Meghalaya", value: "Meghalaya" },
+  { label: "Mizoram", value: "Mizoram" },
+  { label: "Nagaland", value: "Nagaland" },
+  { label: "Odisha", value: "Odisha" },
+  { label: "Punjab", value: "Punjab" },
+  { label: "Rajasthan", value: "Rajasthan" },
+  { label: "Sikkim", value: "Sikkim" },
+  { label: "TamilNadu", value: "TamilNadu" },
+  { label: "Telangana", value: "Telangana" },
+  { label: "Tripura", value: "Tripura" },
+  { label: "UttarPradesh", value: "UttarPradesh" },
+  { label: "Uttarakhand", value: "Uttarakhand" },
+  { label: "WestBengal", value: "WestBengal" },
+  { label: "AndamanNicobar", value: "AndamanNicobar" },
+  { label: "Chandigarh", value: "Chandigarh" },
+  { label: "DadraNagarHaveliDamanDiu", value: "DadraNagarHaveliDamanDiu" },
+  { label: "Lakshadweep", value: "Lakshadweep" },
+  { label: "Delhi", value: "Delhi" },
+  { label: "Puducherry", value: "Puducherry" }
+];
+
 
 const Weather = () => {
   const [selectedState, setSelectedState] = useState('');
@@ -10,15 +48,21 @@ const Weather = () => {
   const [weatherData, setWeatherData] = useState([]);
   const [uvIndex, setUvIndex] = useState([]);
   const [wind, setWind] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingCities, setIsFetchingCities] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [stateModalVisible, setStateModalVisible] = useState(false);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
 
   useEffect(() => {
     if (selectedState) {
+      setCity(''); // Reset city whenever state changes
       fetchCities();
     }
   }, [selectedState]);
 
   const fetchCities = async () => {
+    setIsFetchingCities(true);
     const requestBody = JSON.stringify({ state: selectedState });
 
     try {
@@ -38,10 +82,13 @@ const Weather = () => {
       }
     } catch (error) {
       console.error('Error fetching cities:', error);
+    } finally {
+      setIsFetchingCities(false);
     }
   };
 
   const fetchData = async () => {
+    setIsLoading(true);
     const requestBody = JSON.stringify({ state: selectedState, city });
 
     try {
@@ -73,6 +120,8 @@ const Weather = () => {
       setDataFetched(true);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,92 +129,121 @@ const Weather = () => {
     <View style={styles.container}>
       <Header />
       <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedState}
-          onValueChange={(itemValue) => setSelectedState(itemValue)}
+        <Text style={styles.pickerLabel}>Pick Your State:</Text>
+        <TouchableOpacity
           style={styles.input}
+          onPress={() => setStateModalVisible(true)}
         >
-          <Picker.Item label="Select State" value="" />
-          <Picker.Item label="Andhra Pradesh" value="AndhraPradesh" />
-          <Picker.Item label="Arunachal Pradesh" value="ArunachalPradesh" />
-          <Picker.Item label="Assam" value="Assam" />
-          <Picker.Item label="Bihar" value="Bihar" />
-          <Picker.Item label="Chhattisgarh" value="Chhattisgarh" />
-          <Picker.Item label="Goa" value="Goa" />
-          <Picker.Item label="Gujarat" value="Gujarat" />
-          <Picker.Item label="Haryana" value="Haryana" />
-          <Picker.Item label="Himachal Pradesh" value="HimachalPradesh" />
-          <Picker.Item label="Jharkhand" value="Jharkhand" />
-          <Picker.Item label="Karnataka" value="Karnataka" />
-          <Picker.Item label="Kerala" value="Kerala" />
-          <Picker.Item label="Madhya Pradesh" value="MadhyaPradesh" />
-          <Picker.Item label="Maharashtra" value="Maharashtra" />
-          <Picker.Item label="Manipur" value="Manipur" />
-          <Picker.Item label="Meghalaya" value="Meghalaya" />
-          <Picker.Item label="Mizoram" value="Mizoram" />
-          <Picker.Item label="Nagaland" value="Nagaland" />
-          <Picker.Item label="Odisha" value="Odisha" />
-          <Picker.Item label="Punjab" value="Punjab" />
-          <Picker.Item label="Rajasthan" value="Rajasthan" />
-          <Picker.Item label="Sikkim" value="Sikkim" />
-          <Picker.Item label="Tamil Nadu" value="TamilNadu" />
-          <Picker.Item label="Telangana" value="Telangana" />
-          <Picker.Item label="Tripura" value="Tripura" />
-          <Picker.Item label="Uttar Pradesh" value="UttarPradesh" />
-          <Picker.Item label="Uttarakhand" value="Uttarakhand" />
-          <Picker.Item label="West Bengal" value="WestBengal" />
-        </Picker>
+          <Text>{selectedState ? selectedState : 'Choose State'}</Text>
+        </TouchableOpacity>
 
-        <Picker
-          selectedValue={city}
-          onValueChange={(itemValue) => setCity(itemValue)}
+        <Modal visible={stateModalVisible} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <FlatList
+                data={states}
+                keyExtractor={(item) => item.value}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedState(item.label);
+                      setStateModalVisible(false);
+                    }}
+                    style={styles.modalItem}
+                  >
+                    <Text style={styles.modalItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <Button title="Close" onPress={() => setStateModalVisible(false)} />
+            </View>
+          </View>
+        </Modal>
+
+        <Text style={styles.pickerLabel}>Choose Your City:</Text>
+        <TouchableOpacity
           style={styles.input}
-          enabled={cities.length > 0}
+          onPress={() => setCityModalVisible(true)}
+          disabled={cities.length === 0}
         >
-          <Picker.Item label="Select City" value="" />
-          {cities.map((cityName, index) => (
-            <Picker.Item key={index} label={cityName} value={cityName} />
-          ))}
-        </Picker>
+          {isFetchingCities ? (
+            <ActivityIndicator size="small" color="#007AFF" />
+          ) : (
+            <Text>{city ? city : 'Choose City'}</Text>
+          )}
+        </TouchableOpacity>
 
-        <Button title="Fetch Data" onPress={fetchData} />
+        <Modal visible={cityModalVisible} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <FlatList
+                data={cities}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCity(item);
+                      setCityModalVisible(false);
+                    }}
+                    style={styles.modalItem}
+                  >
+                    <Text style={styles.modalItemText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <Button title="Close" onPress={() => setCityModalVisible(false)} />
+            </View>
+          </View>
+        </Modal>
+
+        <Button title="Get Weather Details" onPress={fetchData} color="#007AFF" />
       </View>
 
-      {dataFetched && (
-        <ScrollView style={styles.dataContainer}>
-          <Text style={styles.title}>Weather Report</Text>
-          <View style={styles.table}>
-            {weatherData.map((row, index) => (
-              <View key={index} style={styles.row}>
-                {row.map((cell, cellIndex) => (
-                  <Text key={cellIndex} style={styles.cell}>{cell}</Text>
-                ))}
-              </View>
-            ))}
-          </View>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <Image
+            source={require('../assets/1495.gif')}
+            style={styles.loadingImage}
+          />
+          <Text style={styles.loadingText}>Fetching the latest data...</Text>
+        </View>
+      ) : (
+        dataFetched && (
+          <ScrollView style={styles.dataContainer}>
+            <Text style={styles.title}>Current Weather</Text>
+            <View style={styles.table}>
+              {weatherData.map((row, index) => (
+                <View key={index} style={styles.row}>
+                  {row.map((cell, cellIndex) => (
+                    <Text key={cellIndex} style={styles.cell}>{cell}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
 
-          <Text style={styles.title}>UV Index Report</Text>
-          <View style={styles.table}>
-            {uvIndex.map((row, index) => (
-              <View key={index} style={styles.row}>
-                {row.map((cell, cellIndex) => (
-                  <Text key={cellIndex} style={styles.cell}>{cell}</Text>
-                ))}
-              </View>
-            ))}
-          </View>
+            <Text style={styles.title}>UV Index</Text>
+            <View style={styles.table}>
+              {uvIndex.map((row, index) => (
+                <View key={index} style={styles.row}>
+                  {row.map((cell, cellIndex) => (
+                    <Text key={cellIndex} style={styles.cell}>{cell}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
 
-          <Text style={styles.title}>Wind Direction Report</Text>
-          <View style={styles.table}>
-            {wind.map((row, index) => (
-              <View key={index} style={styles.row}>
-                {row.map((cell, cellIndex) => (
-                  <Text key={cellIndex} style={styles.cell}>{cell}</Text>
-                ))}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
+            <Text style={styles.title}>Wind Direction</Text>
+            <View style={styles.table}>
+              {wind.map((row, index) => (
+                <View key={index} style={styles.row}>
+                  {row.map((cell, cellIndex) => (
+                    <Text key={cellIndex} style={styles.cell}>{cell}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )
       )}
     </View>
   );
@@ -174,39 +252,90 @@ const Weather = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
     backgroundColor: '#f5f5f5',
   },
   pickerContainer: {
-    padding: 20,
+    padding: scale(20),
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: scale(10),
+    margin: scale(10),
+  },
+  pickerLabel: {
+    fontSize: scale(16),
+    fontWeight: 'bold',
+    marginBottom: verticalScale(10),
+    color: '#555',
   },
   input: {
     borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderColor: '#ddd',
+    borderRadius: scale(5),
+    padding: verticalScale(10),
+    marginBottom: verticalScale(10),
+    width: '100%',
+    backgroundColor: '#fafafa',
+    textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    marginTop:verticalScale(50),
+    marginBottom: verticalScale(30),
     width: '80%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  modalItemText: {
+    fontSize: scale(16),
+    color: '#333',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingImage: {
+    width: scale(80),
+    height: scale(80),
+  },
+  loadingText: {
+    marginTop: verticalScale(10),
+    fontSize: scale(16),
+    color: '#555',
+  },
+  dataContainer: {
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(10),
   },
   title: {
-    fontSize: 24,
+    fontSize: scale(22),
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginVertical: verticalScale(10),
     textAlign: 'center',
+    color: '#333',
   },
   dataContainer: {
     flex: 1,
-    width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   table: {
     borderWidth: 1,
     borderColor: 'black',
-    marginTop: 10,
+    marginTop: verticalScale(10),
     backgroundColor: 'lightblue',
-    padding: 10,
-    borderRadius: 10,
+    padding: verticalScale(10),
+    borderRadius: scale(10),
     width: '100%',
   },
   row: {
@@ -214,7 +343,7 @@ const styles = StyleSheet.create({
   },
   cell: {
     flex: 1,
-    padding: 10,
+    padding: verticalScale(10),
     textAlign: 'center',
     borderWidth: 1,
     borderColor: 'black',
