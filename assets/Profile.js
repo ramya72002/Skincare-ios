@@ -250,6 +250,8 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   modalContainer: {
+    marginBottom: 40,
+    marginTop: 40,
     flex: 1,
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
